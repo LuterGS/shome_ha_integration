@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import logging
 from typing import Optional, Tuple
 
@@ -23,8 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 class SHomeClient:
 
     def __init__(self, hass: HomeAssistant):
-        self._username = None
-        self._password = None
+        self._credential: dict = {}
         self._session = async_get_clientsession(hass)
         self._cookie: Optional[Cookie] = None
         self._login: Optional[Login] = None
@@ -33,11 +31,10 @@ class SHomeClient:
         self._param_maker = SHomeParamMaker()
 
 
-    def set_credential(self, username: str, password: str):
+    def set_credential(self, credential: dict):
         """Set the credentials for the client."""
-        self._username = username
-        self._password = hashlib.sha512(password.encode('utf-8')).hexdigest()
-        _LOGGER.debug("SHomeClient: Credentials set for user: %s", username)
+        self._credential = credential
+        _LOGGER.debug("SHomeClient: Credentials set for user: %s", credential['username'])
 
 
     def close(self):
@@ -73,7 +70,7 @@ class SHomeClient:
 
     async def login(self):
         """Perform login to SHome API."""
-        _LOGGER.debug("[login] start login for user '%s'", self._username)
+        _LOGGER.debug("[login] start login for user '%s'", self._credential['username'])
         
         try:
             # Step 1: Check app version and get cookies
@@ -121,7 +118,7 @@ class SHomeClient:
             async with self._session.request(
                 method=method, url=url,
                 headers=self._header_maker.login_header(self._cookie),
-                params= self._param_maker.login_params(self._username, self._password)
+                params= self._param_maker.login_params(self._credential)
             ) as response:
                 response.raise_for_status()
                 login_data = await response.json()

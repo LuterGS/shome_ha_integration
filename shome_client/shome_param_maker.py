@@ -15,12 +15,7 @@ class SHomeParamMaker:
     APP_NAME = APP_NAME
     OS_TYPE = OS_TYPE
     VERSION = VERSION_PARAM
-    DEVICE_UNIQUE_ID = "TODO" # need find logic to generate or retrieve unique ID
     LANGUAGE = "ENG"
-
-    def __init__(self):
-        # self.DEVICE_UNIQUE_ID = os.urandom(16).hex()[0:16]
-        self.test = "hello"
 
     def _get_hash(self, data: list[str]) -> str:
         data_str = "".join(data)
@@ -38,14 +33,14 @@ class SHomeParamMaker:
             "hashData": hash_data
         }
 
-    def login_params(self, username: str, hashed_user_password: str):
+    def login_params(self, credential: dict):
         current_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
 
-        hash_data = self._get_hash([username, hashed_user_password, self.DEVICE_UNIQUE_ID, self.LANGUAGE, current_date])
+        hash_data = self._get_hash([credential['username'], credential['password'], credential['device_id'], self.LANGUAGE, current_date])
         return {
-            "userId": username,
-            "password": hashed_user_password,
-            "mobileDeviceIdno": self.DEVICE_UNIQUE_ID,
+            "userId": credential['username'],
+            "password": credential['password'],
+            "mobileDeviceIdno": credential['device_id'],
             "appRegstId": "",
             "language": self.LANGUAGE,
             "createDate": current_date,

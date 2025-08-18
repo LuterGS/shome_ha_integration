@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "sHome Login",
+        "description": "Enter your sHome credentials\n\nThe device ID is typically a 16-character hex value. It is recommended to use the default generated value.\n\nIf device login fails, check the sHome app settings under My Account -> Family Device Management to ensure that all 8 slots are filled and remove any unused devices.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "device_id": "Device ID"
+        },
+        "data_description": {
+          "device_id": "16-character hex device identifier"
+        }
+      },
+      "select_device": {
+        "title": "Select Devices",
+        "description": "Select the devices you want to add",
+        "data": {
+          "device_ids": "Devices"
+        }
+      }
+    },
+    "error": {
+      "auth": "Failed to authenticate",
+      "unknown": "Unknown error occurred"
+    },
+    "abort": {
+      "already_configured": "This account is already configured"
+    }
+  }
+}

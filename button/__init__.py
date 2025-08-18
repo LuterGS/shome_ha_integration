@@ -2,31 +2,24 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .refresh_button import RefreshButton
 # top-level imports
 from ..utils import get_or_create_client
 from ..const import DOMAIN
 from ..coordinators.light_coordinator import LightsCoordinator
-from ..shome_client.dto.light import LightInfo
 from ..shome_client.shome_client import SHomeClient
-
-from .grouped_light import ApiGroupedLight
-from .single_light import ApiLight
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up grouped light entities from a config entry."""
+    """Set up the refresh button entity."""
 
     credential: dict = entry.data.get("credential")
     client: SHomeClient = await get_or_create_client(hass, credential)
-    light_devices: LightInfo = await client.get_light_info()
+
     light_coordinator: LightsCoordinator = hass.data[DOMAIN][entry.entry_id]["lights_coordinator"]
 
-    # add all grouped lights first
-    async_add_entities([ApiGroupedLight(light_coordinator)])
-    # then add individual lights
-    async_add_entities([ApiLight(light_coordinator, light) for light in light_devices.devices])
-    # add refresh button
+    # Add the refresh button entity
+    async_add_entities([RefreshButton(light_coordinator)])

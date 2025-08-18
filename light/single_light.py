@@ -1,7 +1,8 @@
 """Support for SHome lights."""
+import asyncio
 import logging
 
-from homeassistant.components.light import LightEntity
+from homeassistant.components.light import LightEntity, ColorMode
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -12,6 +13,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ApiLight(CoordinatorEntity, LightEntity):
+    _attr_supported_color_modes = {ColorMode.ONOFF}
+    _attr_color_mode = ColorMode.ONOFF
     _attr_should_poll = False
 
     def __init__(self, coordinator, light: LightDevice):
@@ -38,13 +41,26 @@ class ApiLight(CoordinatorEntity, LightEntity):
     def brightness(self) -> int | None:
         return None
 
+    async def _delayed_refresh(self):
+        await asyncio.sleep(2)
+        await self.coordinator.async_request_refresh()
+
     async def async_turn_on(self, **kwargs):
         await self.coordinator.toggle_light(self._id, LightStatus.ON)
-        self.coordinator.data[self._id] = {"on": True}
-        await self.async_update_ha_state(True)
+
+        # Optimistic update
+        new_data = self.coordinator.data
+        new_data[self._id] = {"on": True}
+        self.coordinator.async_set_updated_data(new_data)
+
+        asyncio.create_task(self._delayed_refresh())
 
     async def async_turn_off(self, **kwargs):
         await self.coordinator.toggle_light(self._id, LightStatus.OFF)
-        self.coordinator.data[self._id] = {"on": False}
-        await self.async_update_ha_state(True)
-        # self.async_write_ha_state()
+
+        # Optimistic update
+        new_data = self.coordinator.data
+        new_data[self._id] = {"on": False}
+        self.coordinator.async_set_updated_data(new_data)
+
+        asyncio.create_task(self._delayed_refresh())
