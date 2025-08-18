@@ -1,0 +1,11 @@
+{
+  "domain": "shome_integration",
+  "name": "SHome Integration",
+  "version": "1.0.0",
+  "codeowners": ["@LuterGS"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/your_username/shome_ha_integration",
+  "iot_class": "cloud_polling",
+  "requirements": []
+}

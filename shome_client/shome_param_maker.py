@@ -1,0 +1,80 @@
+import hashlib
+import logging
+
+from datetime import datetime, timezone
+
+from .const import APP_NAME, OS_TYPE, VERSION_PARAM
+from .dto.device import Device
+from .dto.light import LightStatus
+from .dto.login import Login
+
+_LOGGER = logging.getLogger(__name__)
+
+class SHomeParamMaker:
+
+    APP_NAME = APP_NAME
+    OS_TYPE = OS_TYPE
+    VERSION = VERSION_PARAM
+    DEVICE_UNIQUE_ID = "TODO" # need find logic to generate or retrieve unique ID
+    LANGUAGE = "ENG"
+
+    def __init__(self):
+        # self.DEVICE_UNIQUE_ID = os.urandom(16).hex()[0:16]
+        self.test = "hello"
+
+    def _get_hash(self, data: list[str]) -> str:
+        data_str = "".join(data)
+        msg = f"IHRESTAPI{data_str}".encode("utf-8")
+        return hashlib.sha512(msg).hexdigest()
+
+    def check_app_version_params(self):
+        current_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_data = self._get_hash([self.APP_NAME, self.OS_TYPE,  self.VERSION, current_date])
+        return {
+            "appName": self.APP_NAME,
+            "osType": self.OS_TYPE,
+            "currentVersion": self.VERSION,
+            "createDate": current_date,
+            "hashData": hash_data
+        }
+
+    def login_params(self, username: str, hashed_user_password: str):
+        current_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+
+        hash_data = self._get_hash([username, hashed_user_password, self.DEVICE_UNIQUE_ID, self.LANGUAGE, current_date])
+        return {
+            "userId": username,
+            "password": hashed_user_password,
+            "mobileDeviceIdno": self.DEVICE_UNIQUE_ID,
+            "appRegstId": "",
+            "language": self.LANGUAGE,
+            "createDate": current_date,
+            "hashData": hash_data
+        }
+
+    def list_devices_params(self, login: Login):
+        current_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_data = self._get_hash([login.wallpad_id, current_date])
+        return {
+            "createDate": current_date,
+            "hashData": hash_data
+        }
+
+    def get_light_info_params(self, device: Device):
+        create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_data = self._get_hash([f"{device.model_name}.{device.unique_num}", create_date])
+        return {
+            "createDate": create_date,
+            "hashData": hash_data
+        }
+
+    def toggle_light_params(self, device: Device, light_id: str, state: LightStatus):
+        create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_data = self._get_hash([f"{device.model_name}.{device.unique_num}", str(light_id), state.name, create_date])
+        return {
+            "state": state.name,
+            "createDate": create_date,
+            "hashData": hash_data
+        }
+
+
