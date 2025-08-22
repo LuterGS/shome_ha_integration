@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 @dataclass(frozen=True)
-class Device:
+class SHomeDevice:
     id: str
     root_id: str
     model_id: str
@@ -22,8 +22,8 @@ class Device:
     device_total_count: int
 
     @staticmethod
-    def from_dict(data: dict) -> 'Device':
-        return Device(
+    def from_dict(data: dict) -> 'SHomeDevice':
+        return SHomeDevice(
             id=data.get("thngId", ""),
             root_id=data.get("rootThngId", ""),
             model_id=data.get("thngModelId", ""),

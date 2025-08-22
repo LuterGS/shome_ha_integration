@@ -4,7 +4,6 @@ import logging
 from datetime import datetime, timezone
 
 from .const import APP_NAME, OS_TYPE, VERSION_PARAM
-from .dto.device import Device
 from .dto.light import LightStatus
 from .dto.login import Login
 
@@ -55,17 +54,26 @@ class SHomeParamMaker:
             "hashData": hash_data
         }
 
-    def get_light_info_params(self, device: Device):
+    def get_light_info_params(self, device_id: str):
         create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
-        hash_data = self._get_hash([f"{device.model_name}.{device.unique_num}", create_date])
+        hash_data = self._get_hash([device_id, create_date])
         return {
             "createDate": create_date,
             "hashData": hash_data
         }
 
-    def toggle_light_params(self, device: Device, light_id: str, state: LightStatus):
+    def toggle_light_params(self, device_id: str, light_id: str, state: LightStatus):
         create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
-        hash_data = self._get_hash([f"{device.model_name}.{device.unique_num}", str(light_id), state.name, create_date])
+        hash_data = self._get_hash([device_id, light_id, state.name, create_date])
+        return {
+            "state": state.name,
+            "createDate": create_date,
+            "hashData": hash_data
+        }
+
+    def toggle_light_room_params(self, device_id: str, room_id: str, state: LightStatus):
+        create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_data = self._get_hash([device_id, room_id, state.name, create_date])
         return {
             "state": state.name,
             "createDate": create_date,

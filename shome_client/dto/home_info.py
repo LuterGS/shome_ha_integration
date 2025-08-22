@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from .device import Device
+from .device import SHomeDevice
 from .pagination import Pagination
 
 
 @dataclass(frozen=True)
-class HomeInfo:
+class SHomeInfo:
     pagination: Pagination
-    devices: list[Device]
+    devices: list[SHomeDevice]

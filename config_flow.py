@@ -1,7 +1,6 @@
 import hashlib
 import logging
 import secrets
-from typing import Optional
 
 from homeassistant import config_entries
 import homeassistant.helpers.config_validation as cv

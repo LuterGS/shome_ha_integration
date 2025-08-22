@@ -7,10 +7,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .dto.cookie import Cookie
-from .dto.device import Device
-from .dto.device_type import DeviceType
-from .dto.home_info import HomeInfo
-from .dto.light import LightInfo, LightStatus
+from .dto.device import SHomeDevice
+from .dto.home_info import SHomeInfo
+from .dto.light import SHomeLightInfo, LightStatus
 from .dto.login import Login
 from .dto.pagination import Pagination
 from .shome_header_maker import SHomeHeaderMaker
@@ -26,7 +25,7 @@ class SHomeClient:
         self._session = async_get_clientsession(hass)
         self._cookie: Optional[Cookie] = None
         self._login: Optional[Login] = None
-        self._home_info: Optional[HomeInfo] = None
+        self._home_info: Optional[SHomeInfo] = None
         self._header_maker = SHomeHeaderMaker()
         self._param_maker = SHomeParamMaker()
 
@@ -34,7 +33,7 @@ class SHomeClient:
     def set_credential(self, credential: dict):
         """Set the credentials for the client."""
         self._credential = credential
-        _LOGGER.debug("SHomeClient: Credentials set for user: %s", credential['username'])
+        _LOGGER.debug("Credentials set for user: %s", credential['username'])
 
 
     def close(self):
@@ -49,23 +48,21 @@ class SHomeClient:
         elif url_type == "list_device":
             return f"https://shome-api.samsung-ihp.com/v16/settings/{self._login.wallpad_id}/devices/", "GET"
         elif url_type == "get_light_info":
-            device: Device = kwargs['device']
-            return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device.model_name}.{device.unique_num}", "GET"
+            device_id = kwargs.get("device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device_id}", "GET"
         elif url_type == "toggle_all_light":
-            device: Device = kwargs['device']
-            return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device.model_name}.{device.unique_num}/0/on-off", "PUT"
+            device_id = kwargs.get("device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device_id}/0/on-off", "PUT"
         elif url_type == "toggle_single_light":
-            device: Device = kwargs['device']
-            light_id = kwargs['light_id']
-            return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device.model_name}.{device.unique_num}/{light_id}/on-off", "PUT"
+            device_id = kwargs.get("device_id")
+            light_id = kwargs.get("light_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device_id}/{light_id}/on-off", "PUT"
+        elif url_type == "toggle_room_light":
+            device_id = kwargs.get("device_id")
+            room_id = kwargs.get("room_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device_id}/rooms/{room_id}/on-off", "PUT"
         else:
             raise ValueError(f"Unknown URL type: {url_type}")
-
-
-    def _determine_device_type(self, device: Device) -> DeviceType:
-        if device.model_type_id == 'TD00000069':
-            return DeviceType.LIGHT
-        return DeviceType.ELSE
 
 
     async def login(self):
@@ -108,7 +105,7 @@ class SHomeClient:
                     JSESSIONID=jsessionid,
                     WMONID=wmonid
                 )
-                _LOGGER.info("[login] got session cookies - JSESSIONID: %s, WMONID: %s",self._cookie.JSESSIONID, self._cookie.WMONID)
+                _LOGGER.debug("[login] got session cookies - JSESSIONID: %s, WMONID: %s",self._cookie.JSESSIONID, self._cookie.WMONID)
 
             await asyncio.sleep(0.5)  # Sleep to ensure cookies are set before next request
 
@@ -134,7 +131,7 @@ class SHomeClient:
             raise
 
 
-    async def get_devices(self, retry_on_401=True):
+    async def get_devices(self, retry_on_401=True) -> SHomeInfo:
         """Fetch list of devices from SHome API."""
         _LOGGER.info("[get_devices] fetching device list")
         
@@ -151,25 +148,13 @@ class SHomeClient:
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
-                self._home_info = HomeInfo(
+                self._home_info = SHomeInfo(
                     pagination=Pagination.from_dict(data["pagination"]),
-                    devices=[Device.from_dict(device) for device in data.get("deviceList", [])]
+                    devices=[SHomeDevice.from_dict(device) for device in data.get("deviceList", [])]
                 )
                 _LOGGER.info("[get_devices] found %d devices", len(self._home_info.devices))
-                
-            total_result = []
-            for device in self._home_info.devices:
-                device_info = {
-                    "id": device.id,
-                    "name": device.nick_name,
-                    "model": device.model_id,
-                    "type": device.model_type_name,
-                    "type_id": device.model_type_id
-                }
-                total_result.append(device_info)
-                _LOGGER.debug("[get_devices] device: %s", device_info)
-                
-            return total_result
+
+            return self._home_info
             
         except ClientResponseError as e:
             if e.status == 401 and retry_on_401:
@@ -177,21 +162,21 @@ class SHomeClient:
                 await self.login()
                 return await self.get_devices(retry_on_401=False)
             else:
-                _LOGGER.error("[get_devices] failed to get devices - %s", str(e))
+                _LOGGER.error("[get_devices] request sent successful, but throw error.\n\tstatus: %s\n\theader: %s\n\tbody: %s", e.status, e.headers, e.message)
+                _LOGGER.debug("[get_devices] detailed stack-trace", exc_info=True)
                 raise
         except Exception as e:
-            _LOGGER.error("[get_devices] failed to get devices - %s", str(e))
+            _LOGGER.error("[get_devices] failed to get devices - %s", e)
             raise
 
 
-    async def _device_request(self, url_key: str, device: Device, headers: dict, params: dict, url_params=None, retry_on_401=True) -> dict:
+    async def _device_request(self, url_key: str, headers: dict, params: dict, url_params=None, retry_on_401=True) -> dict:
         """Make a generic request to the SHome API."""
         if url_params is None:
             url_params = {}
-        _LOGGER.debug("[%s] request with device: %s, headers: %s, params: %s", url_key, device, headers, params)
+        _LOGGER.debug("[%s] request headers: %s, params: %s, url_params: %s", url_key, headers, params, url_params)
 
         try:
-            url_params['device'] = device
             url, method = self._get_url(url_key, **url_params)
             _LOGGER.debug("[%s] fetched URL: [%s] %s", url_key, method, url)
 
@@ -208,63 +193,44 @@ class SHomeClient:
                 await self.login()
                 return await self._device_request(url_key, url_params, headers, params, retry_on_401=False)
             else:
-                _LOGGER.error("[%s] failed request - %s", url_key, e)
+                _LOGGER.error("[%s] request sent successful, but throw error.\n\tstatus: %s\n\theader: %s\n\tbody: %s", url_key, e.status, e.headers, e.message)
+                _LOGGER.debug("[%s] detailed stack-trace", url_key, exc_info=True)
                 raise
 
         except Exception as e:
             _LOGGER.error("[%s] failed request - %s", url_key, e)
             raise
 
-    async def _get_device(self, device_type: DeviceType) -> Optional[Device]:
-        """Get the first device of a specific type."""
-        if not self._home_info:
-            await self.get_devices()
-
-        for device in self._home_info.devices:
-            if self._determine_device_type(device) == device_type:
-                return device
-        return None
-
-    async def get_light_info(self) -> LightInfo:
+    async def get_light_info(self, device_id: str) -> SHomeLightInfo:
         """Fetch light information from SHome API."""
-        device = await self._get_device(DeviceType.LIGHT)
-        if device is None:
-            _LOGGER.error("[get_light_info] no light device found")
-            raise ValueError("No light device found")
-
-        response = await self._device_request(
+        result = await self._device_request(
             url_key="get_light_info",
-            device=device,
-            headers=self._header_maker.get_light_info_header(self._cookie, self._login, device),
-            params=self._param_maker.get_light_info_params(device)
+            headers=self._header_maker.get_light_info_header(self._cookie, self._login),
+            params=self._param_maker.get_light_info_params(device_id),
+            url_params={"device_id": device_id}
         )
-        return LightInfo.from_dict(response)
+        return SHomeLightInfo.from_dict(result)
 
-
-    async def toggle_all_light(self, state: LightStatus):
-        device = await self._get_device(DeviceType.LIGHT)
-        if device is None:
-            _LOGGER.error("[toggle_all_light] no light device found")
-            raise ValueError("No light device found")
-
+    async def toggle_all_light(self, device_id: str, state: LightStatus):
         await self._device_request(
             url_key="toggle_all_light",
-            device=device,
-            headers=self._header_maker.toggle_light_header(self._cookie, self._login, device),
-            params=self._param_maker.toggle_light_params(device, "0", state),
+            headers=self._header_maker.toggle_light_header(self._cookie, self._login),
+            params=self._param_maker.toggle_light_params(device_id, "0", state),
+            url_params={"device_id": device_id}
         )
 
-
-    async def toggle_single_light(self, light_id: str, state: LightStatus):
-        device = await self._get_device(DeviceType.LIGHT)
-        if device is None:
-            _LOGGER.error("[toggle_single_light] no light device found")
-            raise ValueError("No light device found")
-
+    async def toggle_single_light(self, device_id: str, light_id: str, state: LightStatus):
         await self._device_request(
             url_key="toggle_single_light",
-            device=device,
-            headers=self._header_maker.toggle_light_header(self._cookie, self._login, device),
-            params=self._param_maker.toggle_light_params(device, light_id, state),
-            url_params={"light_id": light_id}
+            headers=self._header_maker.toggle_light_header(self._cookie, self._login),
+            params=self._param_maker.toggle_light_params(device_id, light_id, state),
+            url_params={"device_id": device_id, "light_id": light_id}
+        )
+
+    async def toggle_room_light(self, device_id: str, room_id: str, state: LightStatus):
+        await self._device_request(
+            url_key="toggle_room_light",
+            headers=self._header_maker.toggle_light_header(self._cookie, self._login),
+            params=self._param_maker.toggle_light_room_params(device_id, room_id, state),
+            url_params={"device_id": device_id, "room_id": room_id}
         )

@@ -2,15 +2,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .grouped_light import ApiGroupedLight
+from .room_light import ApiRoomLight
+from .single_light import ApiLight
 # top-level imports
-from ..utils import get_or_create_client
 from ..const import DOMAIN
 from ..coordinators.light_coordinator import LightsCoordinator
-from ..shome_client.dto.light import LightInfo
-from ..shome_client.shome_client import SHomeClient
-
-from .grouped_light import ApiGroupedLight
-from .single_light import ApiLight
 
 
 async def async_setup_entry(
@@ -20,13 +17,36 @@ async def async_setup_entry(
 ) -> None:
     """Set up grouped light entities from a config entry."""
 
-    credential: dict = entry.data.get("credential")
-    client: SHomeClient = await get_or_create_client(hass, credential)
-    light_devices: LightInfo = await client.get_light_info()
     light_coordinator: LightsCoordinator = hass.data[DOMAIN][entry.entry_id]["lights_coordinator"]
+    if light_coordinator.data is None:
+        await light_coordinator.async_request_refresh()
 
-    # add all grouped lights first
-    async_add_entities([ApiGroupedLight(light_coordinator)])
-    # then add individual lights
-    async_add_entities([ApiLight(light_coordinator, light) for light in light_devices.devices])
-    # add refresh button
+    light_info = light_coordinator.data
+
+    for light_device_id, light_device_info in light_info.items():
+
+        # init single light
+        single_lights = []
+        for light_id, light_attributes in light_device_info["sub_device_info"].items():
+            single_lights.append(ApiLight(light_coordinator, {
+                "id": light_id,
+                "name": light_attributes["name"],
+                "device_info": light_device_info["device_info"]
+            }))
+        async_add_entities(single_lights)
+
+        # init room light
+        room_lights = []
+        for group_id, group_info in light_device_info["group_info"].items():
+            room_lights.append(ApiRoomLight(light_coordinator, {
+                "id": group_id,
+                "name": group_info["name"],
+                "devices": group_info["devices"],
+                "device_info": light_device_info["device_info"]
+            }))
+        async_add_entities(room_lights)
+
+        # add grouped light entity
+        async_add_entities([ApiGroupedLight(light_coordinator, {
+            "device_info": light_device_info["device_info"]
+        })])

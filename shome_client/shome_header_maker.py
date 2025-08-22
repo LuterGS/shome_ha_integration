@@ -53,13 +53,13 @@ class SHomeHeaderMaker:
         default_headers["Cookie"] = cookie.to_header_value()
         return default_headers
 
-    def get_light_info_header(self, cookie: Cookie, login: Login, device):
+    def get_light_info_header(self, cookie: Cookie, login: Login):
         default_headers = self._build_default_headers()
         default_headers["Authorization"] = f"Bearer {login.access_token}"
         default_headers["Cookie"] = cookie.to_header_value()
         return default_headers
 
-    def toggle_light_header(self, cookie: Cookie, login: Login, device):
+    def toggle_light_header(self, cookie: Cookie, login: Login):
         default_headers = self._build_default_headers()
         default_headers["Authorization"] = f"Bearer {login.access_token}"
         default_headers["Cookie"] = cookie.to_header_value()
