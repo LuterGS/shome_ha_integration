@@ -5,7 +5,8 @@ from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 # top-level imports
-from ..shome_client.dto.light import OnOffStatus, SHomeLightInfo
+from ..shome_client.dto.light import SHomeLightInfo
+from ..shome_client.dto.status import OnOffStatus
 from ..shome_client.dto.device import SHomeDevice
 from ..utils import get_or_create_client
 

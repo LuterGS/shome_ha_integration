@@ -9,9 +9,11 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .dto.cookie import Cookie
 from .dto.device import SHomeDevice
 from .dto.home_info import SHomeInfo
-from .dto.light import SHomeLightInfo, OnOffStatus
+from .dto.light import SHomeLightInfo
+from .dto.status import OnOffStatus
 from .dto.login import Login
 from .dto.sensor import SHomeSensorInfo
+from .dto.ventilation import SHomeVentilationInfo, VentilationSpeed
 from .dto.pagination import Pagination
 from .shome_header_maker import SHomeHeaderMaker
 from .shome_param_maker import SHomeParamMaker
@@ -65,6 +67,17 @@ class SHomeClient:
         elif url_type == "sensor_info":
             device_id = kwargs.get("device_id")
             return f"https://shome-api.samsung-ihp.com/v18/settings/environment-sensor/{device_id}", "GET"
+        elif url_type == "ventilation_info":
+            device_id = kwargs.get("device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/ventilator/{device_id}", "GET"
+        elif url_type == "toggle_ventilation":
+            device_id = kwargs.get("device_id")
+            sub_device_id = kwargs.get("sub_device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/ventilator/{device_id}/{sub_device_id}/on-off", "PUT"
+        elif url_type == "set_ventilation_level":
+            device_id = kwargs.get("device_id")
+            sub_device_id = kwargs.get("sub_device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/ventilator/{device_id}/{sub_device_id}/windspeed", "PUT"
         else:
             raise ValueError(f"Unknown URL type: {url_type}")
 
@@ -247,3 +260,30 @@ class SHomeClient:
             url_params={"device_id": device_id}
         )
         return SHomeSensorInfo.from_dict(data)
+    
+    async def get_ventilation_info(self, device_id: str) -> list[SHomeVentilationInfo]:
+        data = await self._device_request(
+            url_key="ventilation_info",
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.basic_params(device_id),
+            url_params={"device_id": device_id}
+        )
+        result = SHomeVentilationInfo.from_dict(data)
+        _LOGGER.debug("[get_ventilation_info] fetched ventilation info for device %s: %s", device_id, result)
+        return result
+
+    async def toggle_ventilation(self, device_id: str, sub_device_id: str, state: OnOffStatus):
+        await self._device_request(
+            url_key="toggle_ventilation",
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.on_off_params(device_id, sub_device_id, state),
+            url_params={"device_id": device_id, "sub_device_id": sub_device_id}
+        )
+    
+    async def set_ventilation_speed(self, device_id: str, sub_device_id: str, speed: VentilationSpeed):
+        await self._device_request(
+            url_key="set_ventilation",
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.mode_params(device_id, sub_device_id, speed),
+            url_params={"device_id": device_id, "sub_device_id": sub_device_id}
+        )

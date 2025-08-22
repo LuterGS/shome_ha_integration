@@ -4,8 +4,8 @@ import logging
 from datetime import datetime, timezone
 
 from .const import APP_NAME, OS_TYPE, VERSION_PARAM
-from .dto.light import OnOffStatus
-from .dto.login import Login
+from .dto.status import OnOffStatus
+from .dto.ventilation import VentilationSpeed
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +59,15 @@ class SHomeParamMaker:
         hash_data = self._get_hash([device_id, sub_device_id, state.name, create_date])
         return {
             "state": state.name,
+            "createDate": create_date,
+            "hashData": hash_data
+        }
+    
+    def mode_params(self, device_id: str, sub_device_id: str, speed: VentilationSpeed):
+        create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_data = self._get_hash([device_id, sub_device_id, speed.value, create_date])
+        return {
+            "mode": speed.value,
             "createDate": create_date,
             "hashData": hash_data
         }

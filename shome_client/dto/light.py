@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enum import Enum
 
 
 @dataclass(frozen=True)
@@ -51,9 +50,3 @@ class SHomeLightInfo:
             groups=groups,
             devices=devices
         )
-
-
-class OnOffStatus(Enum):
-    ON = "ON"
-    OFF = "OFF"
-

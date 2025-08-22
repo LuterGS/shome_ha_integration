@@ -6,7 +6,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from ..coordinators.light_coordinator import LightToggleType
 from ..const import DOMAIN
-from ..shome_client.dto.light import OnOffStatus
+from ..shome_client.dto.status import OnOffStatus
 
 
 class ApiGroupedLight(CoordinatorEntity, LightEntity):
@@ -17,17 +17,17 @@ class ApiGroupedLight(CoordinatorEntity, LightEntity):
     def __init__(self, coordinator, info: dict):
         super().__init__(coordinator)
         self._id = "0"
-        self._attr_unique_id = f"{info['device_info']['shome_id']}_grouped_light"
+        self._device_key = info["device_info"]["shome_id"]
+        self._attr_unique_id = f"{self._device_key}_grouped_light"
         self._attr_name = "전체 조명"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, info['device_info']['shome_id'])},
+            identifiers={(DOMAIN, self._device_key)},
             name=info["device_info"]["name"],
             model=info["device_info"]["model"],
             model_id=info["device_info"]["model_id"],
             modified_at=info["device_info"]["created_at"],
             manufacturer="SHome"
         )
-        self._device_key = info["device_info"]["shome_id"]
 
     # coordinator.data에서 내 데이터만 꺼내서 표시
     @property

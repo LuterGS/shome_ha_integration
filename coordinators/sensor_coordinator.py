@@ -46,6 +46,7 @@ class SensorCoordinator(DataUpdateCoordinator[dict]):
             for sensor in device_sensors:
                 result[device.id].setdefault(sensor.sub_device_num, {})
                 result[device.id][str(sensor.sub_device_num)] = {
+                    "name": sensor.sub_device_name,
                     "temperature": sensor.temperature,
                     "humidity": sensor.humidity,
                     "co2": sensor.co2,

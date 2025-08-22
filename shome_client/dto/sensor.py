@@ -5,6 +5,7 @@ from typing import Optional
 @dataclass(frozen=True) 
 class SHomeSensorInfo:
     sub_device_num: int
+    sub_device_name: str
     temperature: Optional[float]
     humidity: Optional[float]
     co2: Optional[int]
@@ -26,6 +27,7 @@ class SHomeSensorInfo:
 
             result.append(SHomeSensorInfo(
                 sub_device_num=device.get("deviceId"),
+                sub_device_name=device.get("nickname", ""),
                 temperature=device.get("temperature"),
                 humidity=device.get("humidity"),
                 co2=device.get("co2"),
