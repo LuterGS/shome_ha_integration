@@ -5,7 +5,7 @@ from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 # top-level imports
-from ..shome_client.dto.light import LightStatus, SHomeLightInfo
+from ..shome_client.dto.light import OnOffStatus, SHomeLightInfo
 from ..shome_client.dto.device import SHomeDevice
 from ..utils import get_or_create_client
 
@@ -81,7 +81,7 @@ class LightsCoordinator(DataUpdateCoordinator[dict]):
         except Exception as e:
             raise UpdateFailed(str(e)) from e
 
-    async def toggle_light(self, light_shome_id: str, light_type: LightToggleType, light_id: str, state: LightStatus):
+    async def toggle_light(self, light_shome_id: str, light_type: LightToggleType, light_id: str, state: OnOffStatus):
         try:
             client = await get_or_create_client(self._hass, self._credential)
             if light_type == LightToggleType.ALL:

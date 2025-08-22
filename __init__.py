@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinators.light_coordinator import LightsCoordinator
+from .coordinators.sensor_coordinator import SensorCoordinator
 from .shome_client.dto.device import SHomeDevice
 from .shome_client.dto.home_info import SHomeInfo
 from .shome_client.shome_client import SHomeClient
@@ -35,10 +36,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     light_coordinator: LightsCoordinator = LightsCoordinator(hass, credential, light_devices)
     await light_coordinator.async_config_entry_first_refresh()
 
-    # save light_coordinator for future use
+    # create sensor coordinator
+    sensor_devices: list[SHomeDevice] = device_by_type.get(Platform.SENSOR, [])
+    _LOGGER.debug("Found %d sensor devices from total %d devices", len(sensor_devices), len(home_info.devices))
+    sensor_coordinator: SensorCoordinator = SensorCoordinator(hass, credential, sensor_devices)
+    await sensor_coordinator.async_config_entry_first_refresh()
+
+    # save coordinators for future use
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "lights_coordinator": light_coordinator,
+        "sensor_coordinator": sensor_coordinator,
     }
 
     # launch devices

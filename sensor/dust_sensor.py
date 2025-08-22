@@ -1,21 +1,21 @@
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from ..const import DOMAIN
 
 
-class TemperatureSensor(CoordinatorEntity, SensorEntity):
+class PM10Sensor(CoordinatorEntity, SensorEntity):
     _attr_should_poll = False
-    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_device_class = SensorDeviceClass.PM10
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_native_unit_of_measurement = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
 
     def __init__(self, coordinator, info: dict):
         super().__init__(coordinator)
-        self._attr_unique_id = f"{info['device_info']['shome_id']}_temperature"
-        self._attr_name = f"Temperature"
+        self._attr_unique_id = f"{info['device_info']['shome_id']}_pm10"
+        self._attr_name = f"PM10"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, info['device_info']['shome_id'])},
             name=info["device_info"]["name"],
@@ -29,4 +29,4 @@ class TemperatureSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        return self.coordinator.data.get(self._device_key, {}).get(self._sub_device_num, {}).get("temperature")
+        return self.coordinator.data.get(self._device_key, {}).get(self._sub_device_num, {}).get("pm10")

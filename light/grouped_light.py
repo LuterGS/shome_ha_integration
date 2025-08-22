@@ -6,7 +6,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from ..coordinators.light_coordinator import LightToggleType
 from ..const import DOMAIN
-from ..shome_client.dto.light import LightStatus
+from ..shome_client.dto.light import OnOffStatus
 
 
 class ApiGroupedLight(CoordinatorEntity, LightEntity):
@@ -56,7 +56,7 @@ class ApiGroupedLight(CoordinatorEntity, LightEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_turn_on(self, **kwargs):
-        await self.coordinator.toggle_light(self._device_key, LightToggleType.ALL, self._id, LightStatus.ON)
+        await self.coordinator.toggle_light(self._device_key, LightToggleType.ALL, self._id, OnOffStatus.ON)
 
         # Optimistic update
         new_data = self.coordinator.data
@@ -70,7 +70,7 @@ class ApiGroupedLight(CoordinatorEntity, LightEntity):
         asyncio.create_task(self._delayed_refresh())
 
     async def async_turn_off(self, **kwargs):
-        await self.coordinator.toggle_light(self._device_key, LightToggleType.ALL, self._id, LightStatus.OFF)
+        await self.coordinator.toggle_light(self._device_key, LightToggleType.ALL, self._id, OnOffStatus.OFF)
 
         # Optimistic update
         new_data = self.coordinator.data

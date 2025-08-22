@@ -53,7 +53,7 @@ class SHomeLightInfo:
         )
 
 
-class LightStatus(Enum):
+class OnOffStatus(Enum):
     ON = "ON"
     OFF = "OFF"
 

@@ -9,8 +9,9 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .dto.cookie import Cookie
 from .dto.device import SHomeDevice
 from .dto.home_info import SHomeInfo
-from .dto.light import SHomeLightInfo, LightStatus
+from .dto.light import SHomeLightInfo, OnOffStatus
 from .dto.login import Login
+from .dto.sensor import SHomeSensorInfo
 from .dto.pagination import Pagination
 from .shome_header_maker import SHomeHeaderMaker
 from .shome_param_maker import SHomeParamMaker
@@ -61,6 +62,9 @@ class SHomeClient:
             device_id = kwargs.get("device_id")
             room_id = kwargs.get("room_id")
             return f"https://shome-api.samsung-ihp.com/v18/settings/light/{device_id}/rooms/{room_id}/on-off", "PUT"
+        elif url_type == "sensor_info":
+            device_id = kwargs.get("device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/environment-sensor/{device_id}", "GET"
         else:
             raise ValueError(f"Unknown URL type: {url_type}")
 
@@ -143,8 +147,8 @@ class SHomeClient:
             _LOGGER.debug("[get_devices] request URL: %s", url)
             async with self._session.request(
                 method=method, url=url,
-                headers=self._header_maker.list_device_header(self._cookie, self._login),
-                params=self._param_maker.list_devices_params(self._login)
+                headers=self._header_maker.device_header(self._cookie, self._login),
+                params=self._param_maker.basic_params(self._login.wallpad_id)
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
@@ -203,34 +207,43 @@ class SHomeClient:
 
     async def get_light_info(self, device_id: str) -> SHomeLightInfo:
         """Fetch light information from SHome API."""
-        result = await self._device_request(
+        data = await self._device_request(
             url_key="get_light_info",
-            headers=self._header_maker.get_light_info_header(self._cookie, self._login),
-            params=self._param_maker.get_light_info_params(device_id),
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.basic_params(device_id),
             url_params={"device_id": device_id}
         )
-        return SHomeLightInfo.from_dict(result)
+        return SHomeLightInfo.from_dict(data)
 
-    async def toggle_all_light(self, device_id: str, state: LightStatus):
+    async def toggle_all_light(self, device_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_all_light",
-            headers=self._header_maker.toggle_light_header(self._cookie, self._login),
-            params=self._param_maker.toggle_light_params(device_id, "0", state),
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.on_off_params(device_id, "0", state),
             url_params={"device_id": device_id}
         )
 
-    async def toggle_single_light(self, device_id: str, light_id: str, state: LightStatus):
+    async def toggle_single_light(self, device_id: str, light_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_single_light",
-            headers=self._header_maker.toggle_light_header(self._cookie, self._login),
-            params=self._param_maker.toggle_light_params(device_id, light_id, state),
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.on_off_params(device_id, light_id, state),
             url_params={"device_id": device_id, "light_id": light_id}
         )
 
-    async def toggle_room_light(self, device_id: str, room_id: str, state: LightStatus):
+    async def toggle_room_light(self, device_id: str, room_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_room_light",
-            headers=self._header_maker.toggle_light_header(self._cookie, self._login),
-            params=self._param_maker.toggle_light_room_params(device_id, room_id, state),
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.on_off_params(device_id, room_id, state),
             url_params={"device_id": device_id, "room_id": room_id}
         )
+
+    async def get_sensor_info(self, device_id: str) -> list[SHomeSensorInfo]:
+        data = await self._device_request(
+            url_key="sensor_info",
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.basic_params(device_id),
+            url_params={"device_id": device_id}
+        )
+        return SHomeSensorInfo.from_dict(data)
