@@ -30,15 +30,20 @@ async def async_setup_entry(
         return
 
     sensors = []
-    for device_id, sub_devices in sensor_data.items():
-        for sub_device_num, sub_device in sub_devices.items():
+    for device_id, device in sensor_data.items():
+        for sub_device_num, sub_device in device["sub_devices"].items():
             params = {
-                "device_info": sub_devices["device_info"],
+                "device_info": device["device_info"],
                 "sub_device_num": sub_device_num,
                 "sub_device_name": sub_device.get("name")
             }
-            sensors.append(TemperatureSensor(sensor_coordinator, params))
-            sensors.append(HumiditySensor(sensor_coordinator, params))
-            sensors.append(CO2Sensor(sensor_coordinator, params))
-            sensors.append(PM10Sensor(sensor_coordinator, params))
+            # Only add sensors if data exists
+            if sub_device.get("temperature") is not None:
+                sensors.append(TemperatureSensor(sensor_coordinator, params))
+            if sub_device.get("humidity") is not None:
+                sensors.append(HumiditySensor(sensor_coordinator, params))
+            if sub_device.get("co2") is not None:
+                sensors.append(CO2Sensor(sensor_coordinator, params))
+            if sub_device.get("pm10") is not None:
+                sensors.append(PM10Sensor(sensor_coordinator, params))
     async_add_entities(sensors)

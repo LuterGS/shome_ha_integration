@@ -20,7 +20,7 @@ class SensorCoordinator(DataUpdateCoordinator[dict]):
             _LOGGER,
             name="sensor_coordinator",
             update_method=self._async_update_data,
-            update_interval=timedelta(minutes=1),  # Update every 1 minutes
+            update_interval=timedelta(minutes=3),  # Update every 3 minutes
             request_refresh_debouncer=Debouncer(
                 hass, _LOGGER, cooldown=1.0, immediate=False
             )
@@ -41,11 +41,12 @@ class SensorCoordinator(DataUpdateCoordinator[dict]):
                     "model_id": device.model_id,
                     "created_at": device.created_at,
                     "manufacturer": "SHome",
-                }
+                },
+                "sub_devices": {}
             })
             for sensor in device_sensors:
-                result[device.id].setdefault(sensor.sub_device_num, {})
-                result[device.id][str(sensor.sub_device_num)] = {
+                result[device.id]["sub_devices"].setdefault(sensor.sub_device_num, {})
+                result[device.id]["sub_devices"][str(sensor.sub_device_num)] = {
                     "name": sensor.sub_device_name,
                     "temperature": sensor.temperature,
                     "humidity": sensor.humidity,

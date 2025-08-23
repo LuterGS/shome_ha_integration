@@ -52,7 +52,7 @@ class ApiGroupedLight(CoordinatorEntity, LightEntity):
         return None
 
     async def _delayed_refresh(self):
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_on(self, **kwargs):

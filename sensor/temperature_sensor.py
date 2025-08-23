@@ -29,4 +29,4 @@ class TemperatureSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        return self.coordinator.data.get(self._device_key, {}).get(self._id, {}).get("temperature")
+        return self.coordinator.data.get(self._device_key, {}).get("sub_devices", {}).get(self._id, {}).get("temperature")

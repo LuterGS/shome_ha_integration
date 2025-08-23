@@ -27,7 +27,7 @@ class VentilationFan(CoordinatorEntity, FanEntity):
     """Representation of a SHome ventilation fan."""
     
     _attr_should_poll = False
-    _attr_supported_features = FanEntityFeature.SET_SPEED
+    _attr_supported_features = FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
     _attr_speed_count = 3
     
     def __init__(self, coordinator: VentilationCoordinator, info: dict):
@@ -49,15 +49,19 @@ class VentilationFan(CoordinatorEntity, FanEntity):
     @property
     def _state(self) -> dict:
         """Get current state from coordinator."""
-        return self.coordinator.data.get(self._device_key, {}).get(self._id, {})
+        return self.coordinator.data\
+            .get(self._device_key, {})\
+            .get("sub_devices", {})\
+            .get(self._id, {})\
 
     @property
     def is_on(self) -> bool:
         """Return true if the fan is on."""
-        if self._state.get("status", 0):
+        if self._state.get("status", 0) == 0:
             return False
         else:
             return True
+
 
     @property
     def percentage(self) -> Optional[int]:
@@ -66,34 +70,33 @@ class VentilationFan(CoordinatorEntity, FanEntity):
         if current_speed == VentilationSpeed.OFF:
             return 0
         real_speed = 4 - current_speed
-        return ranged_value_to_percentage(SPEED_RANGE, real_speed)
+        result = ranged_value_to_percentage(SPEED_RANGE, real_speed)
+        return result
+
 
     async def _delayed_refresh(self):
-        await asyncio.sleep(1)
+        await asyncio.sleep(4)
         await self.coordinator.async_request_refresh()
 
-    async def async_turn_on(self, percentage: Optional[int] = None, preset_mode: Optional[str] = None, **kwargs) -> None:
-        """Turn on the fan."""
-        self.coordinator.toggle_ventilation(self._device_key, self._id, OnOffStatus.ON)
 
-        new_data = self.coordinator.data
-        current_device = new_data.get(self._device_key, {})
-        if not current_device:
-            return
-        new_data[self._device_key][self._id]["status"] = VentilationSpeed.SPEED_2
-        self.coordinator.async_set_updated_data(new_data)
+    async def async_turn_on(self, speed: Optional[str] = None, percentage: Optional[int] = None, preset_mode: Optional[str] = None, **kwargs: Any) -> None:
+        """Turn the fan on."""
+        if percentage is None:
+            percentage = 33  # Default to low speed if not specified
+        await self.coordinator.toggle_ventilation(self._device_key, self._id, OnOffStatus.ON)
+        await self.async_set_percentage(percentage)
 
-        asyncio.create_task(self._delayed_refresh())
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the fan off."""
-        self.coordinator.toggle_ventilation(self._device_key, self._id, OnOffStatus.OFF)
+        await self.coordinator.toggle_ventilation(self._device_key, self._id, OnOffStatus.OFF)
 
+        # Optimistic update
         new_data = self.coordinator.data
         current_device = new_data.get(self._device_key, {})
         if not current_device:
             return
-        new_data[self._device_key][self._id]["status"] = VentilationSpeed.OFF
+        new_data[self._device_key]["sub_devices"][self._id]["status"] = VentilationSpeed.OFF.value
         self.coordinator.async_set_updated_data(new_data)
 
         asyncio.create_task(self._delayed_refresh())
@@ -101,18 +104,21 @@ class VentilationFan(CoordinatorEntity, FanEntity):
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percentage of the fan."""
+        speed_value = ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
         if percentage == 0:
-            await self.async_turn_off()
+            shome_value = VentilationSpeed.OFF
+            await self.coordinator.toggle_ventilation(self._device_key, self._id, OnOffStatus.OFF)
         else:
-            # Convert percentage to speed level (1-3)
-            speed_value = ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
             shome_value = VentilationSpeed(4 - speed_value)
-            self.coordinator.set_ventilation_speed(self._device_key, self._id, shome_value)
+            if not self.is_on:
+                await self.coordinator.toggle_ventilation(self._device_key, self._id, OnOffStatus.ON)
+            await self.coordinator.set_ventilation_speed(self._device_key, self._id, shome_value)
 
-            new_data = self.coordinator.data
-            current_device = new_data.get(self._device_key, {})
-            if not current_device:
-                return
-            new_data[self._device_key][self._id]["status"] = shome_value.value
+        new_data = self.coordinator.data
+        current_device = new_data.get(self._device_key, {})
+        if not current_device:
+            return
+        new_data[self._device_key]["sub_devices"][self._id]["status"] = shome_value.value
+        self.coordinator.async_set_updated_data(new_data)
 
-            asyncio.create_task(self._delayed_refresh())
+        asyncio.create_task(self._delayed_refresh())

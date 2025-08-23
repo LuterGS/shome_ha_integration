@@ -74,7 +74,7 @@ class SHomeClient:
             device_id = kwargs.get("device_id")
             sub_device_id = kwargs.get("sub_device_id")
             return f"https://shome-api.samsung-ihp.com/v18/settings/ventilator/{device_id}/{sub_device_id}/on-off", "PUT"
-        elif url_type == "set_ventilation_level":
+        elif url_type == "set_ventilation_speed":
             device_id = kwargs.get("device_id")
             sub_device_id = kwargs.get("sub_device_id")
             return f"https://shome-api.samsung-ihp.com/v18/settings/ventilator/{device_id}/{sub_device_id}/windspeed", "PUT"
@@ -282,7 +282,7 @@ class SHomeClient:
     
     async def set_ventilation_speed(self, device_id: str, sub_device_id: str, speed: VentilationSpeed):
         await self._device_request(
-            url_key="set_ventilation",
+            url_key="set_ventilation_speed",
             headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.mode_params(device_id, sub_device_id, speed),
             url_params={"device_id": device_id, "sub_device_id": sub_device_id}

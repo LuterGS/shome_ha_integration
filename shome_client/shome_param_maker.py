@@ -65,7 +65,7 @@ class SHomeParamMaker:
     
     def mode_params(self, device_id: str, sub_device_id: str, speed: VentilationSpeed):
         create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
-        hash_data = self._get_hash([device_id, sub_device_id, speed.value, create_date])
+        hash_data = self._get_hash([device_id, sub_device_id, str(speed.value), create_date])
         return {
             "mode": speed.value,
             "createDate": create_date,

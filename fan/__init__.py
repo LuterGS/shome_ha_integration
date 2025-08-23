@@ -30,12 +30,11 @@ async def async_setup_entry(
     
     fans = []
     for device_id, device_data in ventilation_data.items():
-        for sub_device_num, ventilation in device_data.items():
-
+        for sub_device_num, ventilation in device_data["sub_devices"].items():
             # Create the fan entity
             fans.append(VentilationFan(ventilation_coordinator, {
                 "device_info": device_data.get("device_info", {}),
                 "sub_device_num": sub_device_num,
-                "sub_device_name": ventilation["name"]
+                "sub_device_name": ventilation.get("name")
             }))
     async_add_entities(fans)

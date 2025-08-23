@@ -41,13 +41,14 @@ class VentilationCoordinator(DataUpdateCoordinator[dict]):
                     "model_id": device.model_id,
                     "created_at": device.created_at,
                     "manufacturer": "SHome",
-                }
+                },
+                "sub_devices": {}
             })
             for ventilation in device_ventilations:
-                result[device.id].setdefault(ventilation.sub_device_num, {
+                result[device.id]["sub_devices"][str(ventilation.sub_device_num)] = {
                     "name": ventilation.sub_device_name,
                     "status": ventilation.current_speed.value
-                })
+                }
             _LOGGER.debug("Ventilation device %s initialized with data: %s", device.id, result[device.id])
         return result
 

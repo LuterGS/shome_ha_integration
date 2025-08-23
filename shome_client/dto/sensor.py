@@ -22,8 +22,8 @@ class SHomeSensorInfo:
                 device["humidity"] = int(device["humidity"])
             if device.get("co2") is not None:
                 device["co2"] = int(device["co2"])
-            if device.get("pm10") is not None:
-                device["pm10"] = int(device["pm10"])
+            if device.get("fineDust") is not None:
+                device["fineDust"] = int(device["fineDust"])
 
             result.append(SHomeSensorInfo(
                 sub_device_num=device.get("deviceId"),
@@ -31,6 +31,6 @@ class SHomeSensorInfo:
                 temperature=device.get("temperature"),
                 humidity=device.get("humidity"),
                 co2=device.get("co2"),
-                pm10=device.get("pm10")
+                pm10=device.get("fineDust")
             ))
         return result
