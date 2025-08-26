@@ -1,4 +1,25 @@
+import logging
 from dataclasses import dataclass
+
+
+_LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CheckAppVersionResponse:
+    result: int
+    needUpdate: int
+
+    @staticmethod
+    def from_dict(data: dict) -> 'CheckAppVersionResponse':
+        return CheckAppVersionResponse(
+            result=data.get("result", 0),
+            needUpdate=data.get("needUpdate", 0)
+        )
+
+    @property
+    def need_update(self) -> bool:
+        return self.needUpdate != 0
 
 
 @dataclass(frozen=True)

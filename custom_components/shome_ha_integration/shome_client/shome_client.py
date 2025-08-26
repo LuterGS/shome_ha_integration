@@ -11,7 +11,7 @@ from .dto.device import SHomeDevice
 from .dto.home_info import SHomeInfo
 from .dto.light import SHomeLightInfo
 from .dto.status import OnOffStatus
-from .dto.login import Login
+from .dto.login import Login, CheckAppVersionResponse
 from .dto.sensor import SHomeSensorInfo
 from .dto.ventilation import SHomeVentilationInfo, VentilationSpeed
 from .dto.pagination import Pagination
@@ -105,36 +105,45 @@ class SHomeClient:
             ) as response:
                 response.raise_for_status()
 
-                body = await response.text()
+                raw_body = await response.json()
+                body = CheckAppVersionResponse.from_dict(raw_body)
 
+                _LOGGER.debug(f"[login] checkAppVersionResponse body: {body}")
                 # Debug: Log all headers
                 _LOGGER.debug("[login] login response status code: %s", response.status)
                 _LOGGER.debug("[login] Response headers: %s", dict(response.headers))
                 _LOGGER.debug("[login] Response status: %s", response.status)
                 _LOGGER.debug("[login] Response body: %s", body)
-                
-                # Extract cookies from response
-                jsessionid = None
-                wmonid = None
-                
-                # Parse cookies from response.cookies (SimpleCookie object)
-                if response.cookies:
-                    for cookie_name, cookie_value in response.cookies.items():
-                        _LOGGER.debug("[login] Cookie found: %s = %s", cookie_name, cookie_value.value if hasattr(cookie_value, 'value') else cookie_value)
-                        if cookie_name == "JSESSIONID":
-                            jsessionid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
-                        elif cookie_name == "WMONID":
-                            wmonid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
 
-                if not jsessionid:
-                    raise ValueError(f"Failed to get JSESSIONID cookie from response")
+                if body.need_update:
+                    _LOGGER.debug(f"[login] will update JSESSIONID and WMONID from header, because it needs update")
 
-                
-                self._cookie = Cookie(
-                    JSESSIONID=jsessionid,
-                    WMONID=wmonid
-                )
-                _LOGGER.debug("[login] got session cookies - JSESSIONID: %s, WMONID: %s",self._cookie.JSESSIONID, self._cookie.WMONID)
+                    # Extract cookies from response
+                    jsessionid = None
+                    wmonid = None
+
+                    # Parse cookies from response.cookies (SimpleCookie object)
+                    if response.cookies:
+                        for cookie_name, cookie_value in response.cookies.items():
+                            _LOGGER.debug("[login] Cookie found: %s = %s", cookie_name,
+                                          cookie_value.value if hasattr(cookie_value, 'value') else cookie_value)
+                            if cookie_name == "JSESSIONID":
+                                jsessionid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
+                            elif cookie_name == "WMONID":
+                                wmonid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
+
+                    if not jsessionid:
+                        raise ValueError(f"Failed to get JSESSIONID cookie from response")
+
+                    self._cookie = Cookie(
+                        JSESSIONID=jsessionid,
+                        WMONID=wmonid
+                    )
+                    _LOGGER.debug("[login] got session cookies - JSESSIONID: %s, WMONID: %s", self._cookie.JSESSIONID,
+                                  self._cookie.WMONID)
+
+                else:
+                    _LOGGER.debug("[login] no need to update cookie. Bypass")
 
             await asyncio.sleep(0.5)  # Sleep to ensure cookies are set before next request
 
