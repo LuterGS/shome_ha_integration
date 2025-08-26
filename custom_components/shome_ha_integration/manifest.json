@@ -1,7 +1,7 @@
 {
   "domain": "shome_integration",
-  "name": "SHome Integration",
-  "version": "1.0.0",
+  "name": "sHome (ZigBang IoT) Integration",
+  "version": "0.0.1",
   "codeowners": ["@LuterGS"],
   "config_flow": true,
   "dependencies": [],

@@ -91,15 +91,25 @@ class SHomeClient:
             _LOGGER.debug(f"[login] checking app version")
             url, method = self._get_url("check_app_version")
 
+            headers = self._header_maker.check_app_version_header()
+            params = self._param_maker.check_app_version_params()
+            _LOGGER.debug("[login] check_app_version request URL: %s", url)
+            _LOGGER.debug("[login] check_app_version request method: %s", method)
+            _LOGGER.debug("[login] check_app_version request headers: %s", headers)
+            _LOGGER.debug("[login] check_app_version request params: %s", params)
+
             async with self._session.request(
                 method=method, url=url,
-                headers=self._header_maker.check_app_version_header(),
-                params=self._param_maker.check_app_version_params()
+                headers=headers,
+                params=params
             ) as response:
                 response.raise_for_status()
                 
                 # Debug: Log all headers
+                _LOGGER.debug("[login] login response status code: %s", response.status)
                 _LOGGER.debug("[login] Response headers: %s", dict(response.headers))
+                _LOGGER.debug("[login] Response status: %s", response.status)
+                _LOGGER.debug("[login] Response body: %s", response.text())
                 
                 # Extract cookies from response
                 jsessionid = None
@@ -208,7 +218,7 @@ class SHomeClient:
             if e.status == 401 and retry_on_401:
                 _LOGGER.warning("[%s] request 401 - attempting to re-login", url_key)
                 await self.login()
-                return await self._device_request(url_key, url_params, headers, params, retry_on_401=False)
+                return await self._device_request(url_key, headers, params, url_params, retry_on_401=False)
             else:
                 _LOGGER.error("[%s] request sent successful, but throw error.\n\tstatus: %s\n\theader: %s\n\tbody: %s", url_key, e.status, e.headers, e.message)
                 _LOGGER.debug("[%s] detailed stack-trace", url_key, exc_info=True)
@@ -237,6 +247,7 @@ class SHomeClient:
         )
 
     async def toggle_single_light(self, device_id: str, light_id: str, state: OnOffStatus):
+        await self.login()
         await self._device_request(
             url_key="toggle_single_light",
             headers=self._header_maker.device_header(self._cookie, self._login),

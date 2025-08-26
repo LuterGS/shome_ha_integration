@@ -27,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     device_by_type: dict[Platform, list[SHomeDevice]] = {}
     for device in home_info.devices:
         device_type = get_device_type(device)
-        _LOGGER.debug("Device %s (model_type_id: %s) classified as %s", 
+        _LOGGER.debug("Device %s (model_type_id: %s) classified as %s",
                      device.nick_name, device.model_type_id, device_type)
         device_by_type.setdefault(device_type, []).append(device)
 
