@@ -104,12 +104,14 @@ class SHomeClient:
                 params=params
             ) as response:
                 response.raise_for_status()
-                
+
+                body = await response.text()
+
                 # Debug: Log all headers
                 _LOGGER.debug("[login] login response status code: %s", response.status)
                 _LOGGER.debug("[login] Response headers: %s", dict(response.headers))
                 _LOGGER.debug("[login] Response status: %s", response.status)
-                _LOGGER.debug("[login] Response body: %s", response.text())
+                _LOGGER.debug("[login] Response body: %s", body)
                 
                 # Extract cookies from response
                 jsessionid = None
