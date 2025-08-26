@@ -252,7 +252,6 @@ class SHomeClient:
         )
 
     async def toggle_single_light(self, device_id: str, light_id: str, state: OnOffStatus):
-        await self.login()
         await self._device_request(
             url_key="toggle_single_light",
             headers=self._header_maker.device_header(self._cookie, self._login),
