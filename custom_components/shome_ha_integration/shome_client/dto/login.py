@@ -14,7 +14,7 @@ class CheckAppVersionResponse:
     def from_dict(data: dict) -> 'CheckAppVersionResponse':
         return CheckAppVersionResponse(
             result=data.get("result", 0),
-            needUpdate=data.get("needUpdate", 0)
+            needUpdate=int(data.get("needUpdate", '0'))
         )
 
     @property
