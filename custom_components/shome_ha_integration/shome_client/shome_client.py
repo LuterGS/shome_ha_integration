@@ -115,35 +115,29 @@ class SHomeClient:
                 _LOGGER.debug("[login] Response status: %s", response.status)
                 _LOGGER.debug("[login] Response body: %s", body)
 
-                if body.need_update:
-                    _LOGGER.debug(f"[login] will update JSESSIONID and WMONID from header, because it needs update")
+                # Extract cookies from response
+                jsessionid = None
+                wmonid = None
 
-                    # Extract cookies from response
-                    jsessionid = None
-                    wmonid = None
+                # Parse cookies from response.cookies (SimpleCookie object)
+                if response.cookies:
+                    for cookie_name, cookie_value in response.cookies.items():
+                        _LOGGER.debug("[login] Cookie found: %s = %s", cookie_name,
+                                      cookie_value.value if hasattr(cookie_value, 'value') else cookie_value)
+                        if cookie_name == "JSESSIONID":
+                            jsessionid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
+                        elif cookie_name == "WMONID":
+                            wmonid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
 
-                    # Parse cookies from response.cookies (SimpleCookie object)
-                    if response.cookies:
-                        for cookie_name, cookie_value in response.cookies.items():
-                            _LOGGER.debug("[login] Cookie found: %s = %s", cookie_name,
-                                          cookie_value.value if hasattr(cookie_value, 'value') else cookie_value)
-                            if cookie_name == "JSESSIONID":
-                                jsessionid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
-                            elif cookie_name == "WMONID":
-                                wmonid = cookie_value.value if hasattr(cookie_value, 'value') else str(cookie_value)
-
-                    if not jsessionid:
-                        raise ValueError(f"Failed to get JSESSIONID cookie from response")
-
+                if jsessionid:
                     self._cookie = Cookie(
                         JSESSIONID=jsessionid,
                         WMONID=wmonid
                     )
                     _LOGGER.debug("[login] got session cookies - JSESSIONID: %s, WMONID: %s", self._cookie.JSESSIONID,
                                   self._cookie.WMONID)
-
                 else:
-                    _LOGGER.debug("[login] no need to update cookie. Bypass")
+                    _LOGGER.warning("[login] Cookie not found, will use existing cookie value")
 
             await asyncio.sleep(0.5)  # Sleep to ensure cookies are set before next request
 

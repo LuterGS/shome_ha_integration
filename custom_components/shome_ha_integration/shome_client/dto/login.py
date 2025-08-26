@@ -17,10 +17,6 @@ class CheckAppVersionResponse:
             needUpdate=int(data.get("needUpdate", '0'))
         )
 
-    @property
-    def need_update(self) -> bool:
-        return self.needUpdate != 0
-
 
 @dataclass(frozen=True)
 class Login:
