@@ -2,6 +2,7 @@ import asyncio
 
 from homeassistant.components.climate import ClimateEntity, HVACMode, ClimateEntityFeature
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -15,15 +16,15 @@ class Aircon(CoordinatorEntity, ClimateEntity):
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL]
     _attr_max_temp = 30.0
     _attr_min_temp = 18.0
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_supported_features = ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TARGET_TEMPERATURE
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
 
     def __init__(self, coordinator: AirconCoordinator, info: dict):
         super().__init__(coordinator)
         self._id = str(info["sub_device_num"])
         self._device_key = info["device_info"]["shome_id"]
-        self._attr_unique_id = f"{self._device_key}_{info['sub_device_num']}_heater"
-        self._attr_name = f"{info['sub_device_name']}_heater"
+        self._attr_unique_id = f"{self._device_key}_{info['sub_device_num']}"
+        self._attr_name = f"{info['sub_device_name']}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._device_key)},
             name=info["device_info"]["name"],
