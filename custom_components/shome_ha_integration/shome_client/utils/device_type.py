@@ -20,7 +20,7 @@ _device_type_map: dict[str, tuple[Platform, str]] = {
 
 
 def get_device_type(device: SHomeDevice) -> Optional[tuple[Platform, str]]:
-    return _device_type_map.get(device.model_type_id)
+    return _device_type_map.get(device.model_type_id, None)
 
 # use for build URL
 def get_shome_device_type(device: SHomeDevice) -> str:

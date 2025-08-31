@@ -31,6 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             _LOGGER.warning("Device %s (model_type_id: %s) is not supported, skipping",
                             device.nick_name, device.model_type_id)
             continue
+        _LOGGER.debug("device_type: %s", device_type)
         platform, shome_device_type = device_type
         _LOGGER.debug("Device %s (model_type_id: %s) classified as %s",
                      device.nick_name, device.model_type_id, (platform, shome_device_type))
