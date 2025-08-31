@@ -71,3 +71,12 @@ class SHomeParamMaker:
             "createDate": create_date,
             "hashData": hash_data
         }
+
+    def temperature_params(self, device_id: str, sub_device_id: str, temperature: int):
+        create_date = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        hash_data = self._get_hash([device_id, sub_device_id, str(temperature), create_date])
+        return {
+            "state": str(temperature),
+            "createDate": create_date,
+            "hashData": hash_data
+        }

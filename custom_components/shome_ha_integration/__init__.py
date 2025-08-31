@@ -5,6 +5,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .coordinators.aircon_coordinator import AirconCoordinator
 from .coordinators.light_coordinator import LightsCoordinator
 from .coordinators.sensor_coordinator import SensorCoordinator
 from .coordinators.ventilation_coordinator import VentilationCoordinator
@@ -24,30 +25,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # get devices
     home_info: SHomeInfo = await client.get_devices()
-    device_by_type: dict[Platform, list[SHomeDevice]] = {}
+    device_by_type: dict[Platform, dict[str, list[SHomeDevice]]] = {}
     for device in home_info.devices:
-        device_type = get_device_type(device)
+        platform, shome_device_type = get_device_type(device)
         _LOGGER.debug("Device %s (model_type_id: %s) classified as %s",
-                     device.nick_name, device.model_type_id, device_type)
-        device_by_type.setdefault(device_type, []).append(device)
+                     device.nick_name, device.model_type_id, (platform, shome_device_type))
+        device_by_type.setdefault(platform, {}).setdefault(shome_device_type, []).append(device)
 
     # create light coordinator
-    light_devices: list[SHomeDevice] = device_by_type.get(Platform.LIGHT, [])
+    light_devices: list[SHomeDevice] = device_by_type.get(Platform.LIGHT, {}).get("light", [])
     _LOGGER.debug("Found %d light devices from total %d devices", len(light_devices), len(home_info.devices))
     light_coordinator: LightsCoordinator = LightsCoordinator(hass, credential, light_devices)
     await light_coordinator.async_config_entry_first_refresh()
 
     # create sensor coordinator
-    sensor_devices: list[SHomeDevice] = device_by_type.get(Platform.SENSOR, [])
+    sensor_devices: list[SHomeDevice] = device_by_type.get(Platform.SENSOR, {}).get("environment-sensor", [])
     _LOGGER.debug("Found %d sensor devices from total %d devices", len(sensor_devices), len(home_info.devices))
     sensor_coordinator: SensorCoordinator = SensorCoordinator(hass, credential, sensor_devices)
     await sensor_coordinator.async_config_entry_first_refresh()
 
     # create ventilation coordinator
-    fan_devices: list[SHomeDevice] = device_by_type.get(Platform.FAN, [])
+    fan_devices: list[SHomeDevice] = device_by_type.get(Platform.FAN, {}).get("ventilator", [])
     _LOGGER.debug("Found %d fan devices from total %d devices", len(fan_devices), len(home_info.devices))
     ventilation_coordinator: VentilationCoordinator = VentilationCoordinator(hass, credential, fan_devices)
     await ventilation_coordinator.async_config_entry_first_refresh()
+
+    # create aircon coordinator
+    aircon_devices: list[SHomeDevice] = device_by_type.get(Platform.CLIMATE, {}).get("aircon", [])
+    _LOGGER.debug("Found %d aircon devices from total %d devices", len(aircon_devices), len(home_info.devices))
+    aircon_coordinator: AirconCoordinator = AirconCoordinator(hass, credential, aircon_devices)
+    await aircon_coordinator.async_config_entry_first_refresh()
 
     # save coordinators for future use
     hass.data.setdefault(DOMAIN, {})
@@ -55,6 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "lights_coordinator": light_coordinator,
         "sensor_coordinator": sensor_coordinator,
         "ventilation_coordinator": ventilation_coordinator,
+        "aircon_coordinator": aircon_coordinator,
     }
 
     # launch devices

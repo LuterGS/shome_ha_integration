@@ -1,5 +1,6 @@
 import logging
 
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -14,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class VentilationCoordinator(DataUpdateCoordinator[dict]):
 
-    def __init__(self, hass, credential: dict, devices: list[SHomeDevice]):
+    def __init__(self, hass: HomeAssistant, credential: dict, devices: list[SHomeDevice]):
         super().__init__(
             hass,
             _LOGGER,

@@ -1,11 +1,13 @@
 import asyncio
 import logging
+from enum import Enum
 from typing import Optional, Tuple
 
 from aiohttp import ClientResponseError
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .dto.aircon import SHomeAirconInfo
 from .dto.cookie import Cookie
 from .dto.device import SHomeDevice
 from .dto.home_info import SHomeInfo
@@ -19,6 +21,11 @@ from .shome_header_maker import SHomeHeaderMaker
 from .shome_param_maker import SHomeParamMaker
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class DeviceRequestType(Enum):
+    ON_OFF = "on-off"
+    WINDSPEED = "windspeed"
 
 
 class SHomeClient:
@@ -78,6 +85,17 @@ class SHomeClient:
             device_id = kwargs.get("device_id")
             sub_device_id = kwargs.get("sub_device_id")
             return f"https://shome-api.samsung-ihp.com/v18/settings/ventilator/{device_id}/{sub_device_id}/windspeed", "PUT"
+        elif url_type == "aircon_info":
+            device_id = kwargs.get("device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/aircon/{device_id}", "GET"
+        elif url_type == "toggle_aircon":
+            device_id = kwargs.get("device_id")
+            sub_device_id = kwargs.get("sub_device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/aircon/{device_id}/{sub_device_id}/on-off", "PUT"
+        elif url_type == "set_aircon_temp":
+            device_id = kwargs.get("device_id")
+            sub_device_id = kwargs.get("sub_device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/aircon/{device_id}/{sub_device_id}/temperature", "PUT"
         else:
             raise ValueError(f"Unknown URL type: {url_type}")
 
@@ -300,5 +318,30 @@ class SHomeClient:
             url_key="set_ventilation_speed",
             headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.mode_params(device_id, sub_device_id, speed),
+            url_params={"device_id": device_id, "sub_device_id": sub_device_id}
+        )
+
+    async def get_aircon_info(self, device_id: str) -> list[SHomeAirconInfo]:
+        data = await self._device_request(
+            url_key="aircon_info",
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.basic_params(device_id),
+            url_params={"device_id": device_id}
+        )
+        return SHomeAirconInfo.from_dict(data)
+
+    async def toggle_aircon(self, device_id: str, sub_device_id: str, state: OnOffStatus):
+        await self._device_request(
+            url_key="toggle_aircon",
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.on_off_params(device_id, sub_device_id, state),
+            url_params={"device_id": device_id, "sub_device_id": sub_device_id}
+        )
+
+    async def set_aircon_temp(self, device_id: str, sub_device_id: str, temperature: int):
+        await self._device_request(
+            url_key="set_aircon_temp",
+            headers=self._header_maker.device_header(self._cookie, self._login),
+            params=self._param_maker.temperature_params(device_id, sub_device_id, temperature),
             url_params={"device_id": device_id, "sub_device_id": sub_device_id}
         )
