@@ -1,8 +1,7 @@
 import asyncio
 
-from homeassistant.components.climate import ClimateEntity, HVACMode
-from homeassistant.components.greeneye_monitor import TEMPERATURE_UNIT_CELSIUS
-from homeassistant.const import ATTR_TEMPERATURE
+from homeassistant.components.climate import ClimateEntity, HVACMode, ClimateEntityFeature
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -16,7 +15,8 @@ class Aircon(CoordinatorEntity, ClimateEntity):
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL]
     _attr_max_temp = 30.0
     _attr_min_temp = 18.0
-    _attr_temperature_unit = TEMPERATURE_UNIT_CELSIUS
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_supported_features = ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TARGET_TEMPERATURE
 
     def __init__(self, coordinator: AirconCoordinator, info: dict):
         super().__init__(coordinator)
@@ -42,12 +42,23 @@ class Aircon(CoordinatorEntity, ClimateEntity):
             return HVACMode.OFF
 
     @property
+    def current_temperature(self):
+        return (self.coordinator.data or {}).get(self._device_key, {}).get("sub_devices", {}).get(self._id, {}).get("current_temperature")
+
+    @property
     def target_temperature(self):
         return (self.coordinator.data or {}).get(self._device_key, {}).get("sub_devices", {}).get(self._id, {}).get("target_temperature")
 
     async def _delayed_refresh(self):
         await asyncio.sleep(2)
         await self.coordinator.async_request_refresh()
+
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        if hvac_mode == HVACMode.OFF:
+            await self.async_turn_off()
+        elif hvac_mode == HVACMode.COOL:
+            await self.async_turn_on()
+        # 다른 모드는 미지원
 
     async def async_turn_on(self) -> None:
         await self.coordinator.toggle_aircon(self._device_key, self._id, OnOffStatus.ON)
