@@ -1,4 +1,4 @@
-
+from typing import Optional
 
 from homeassistant.const import Platform
 
@@ -19,8 +19,8 @@ _device_type_map: dict[str, tuple[Platform, str]] = {
 }
 
 
-def get_device_type(device: SHomeDevice) -> tuple[Platform, str]:
-    return _device_type_map.get(device.model_type_id, Platform)
+def get_device_type(device: SHomeDevice) -> Optional[tuple[Platform, str]]:
+    return _device_type_map.get(device.model_type_id)
 
 # use for build URL
 def get_shome_device_type(device: SHomeDevice) -> str:
