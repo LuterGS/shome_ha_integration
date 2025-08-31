@@ -30,11 +30,11 @@ async def async_setup_entry(
 
     climates = []
     for device_id, device_data in aircon_data.items():
-        for sub_device_num, aircon in device_data["sub_devices"].items():
+        for sub_device_num, aircon_device in device_data["sub_devices"].items():
             # Create the climate entity
             climates.append(Aircon(aircon_coordinator, {
                 "device_info": device_data.get("device_info", {}),
                 "sub_device_num": sub_device_num,
-                "sub_device_name": aircon.get("name")
+                "sub_device_name": aircon_device.get("name")
             }))
     async_add_entities(climates)
