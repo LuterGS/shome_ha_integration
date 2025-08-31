@@ -20,10 +20,7 @@ _device_type_map: dict[str, tuple[Platform, str]] = {
 
 
 def get_device_type(device: SHomeDevice) -> tuple[Platform, str]:
-    platform = _device_type_map.get(device.model_type_id, Platform)
-    if not platform:
-        raise ValueError(f"Unsupported device type: {device.model_type_id}")
-    return platform
+    return _device_type_map.get(device.model_type_id, Platform)
 
 # use for build URL
 def get_shome_device_type(device: SHomeDevice) -> str:
@@ -31,4 +28,3 @@ def get_shome_device_type(device: SHomeDevice) -> str:
     if not platform:
         raise ValueError(f"Unsupported device type: {device.model_type_id}")
     return platform[1]
-

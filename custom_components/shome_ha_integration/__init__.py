@@ -27,7 +27,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     home_info: SHomeInfo = await client.get_devices()
     device_by_type: dict[Platform, dict[str, list[SHomeDevice]]] = {}
     for device in home_info.devices:
-        platform, shome_device_type = get_device_type(device)
+        if (device_type := get_device_type(device)) is None:
+            _LOGGER.warning("Device %s (model_type_id: %s) is not supported, skipping",
+                            device.nick_name, device.model_type_id)
+            continue
+        platform, shome_device_type = device_type
         _LOGGER.debug("Device %s (model_type_id: %s) classified as %s",
                      device.nick_name, device.model_type_id, (platform, shome_device_type))
         device_by_type.setdefault(platform, {}).setdefault(shome_device_type, []).append(device)
