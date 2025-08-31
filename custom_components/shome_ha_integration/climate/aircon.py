@@ -1,13 +1,12 @@
 import asyncio
 
 from homeassistant.components.climate import ClimateEntity, HVACMode, ClimateEntityFeature
-from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
-from homeassistant.core import HomeAssistant
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature, PRECISION_WHOLE
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from ..coordinators.aircon_coordinator import AirconCoordinator
 from ..const import DOMAIN
+from ..coordinators.aircon_coordinator import AirconCoordinator
 from ..shome_client.dto.status import OnOffStatus
 
 
@@ -17,6 +16,7 @@ class Aircon(CoordinatorEntity, ClimateEntity):
     _attr_max_temp = 30.0
     _attr_min_temp = 18.0
     _attr_supported_features = ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TARGET_TEMPERATURE
+    _attr_precision = PRECISION_WHOLE
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
 
     def __init__(self, coordinator: AirconCoordinator, info: dict):
