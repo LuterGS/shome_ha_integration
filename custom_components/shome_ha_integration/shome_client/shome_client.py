@@ -220,17 +220,19 @@ class SHomeClient:
             raise
 
 
-    async def _device_request(self, url_key: str, headers: dict, params: dict, url_params=None, retry_on_401=True) -> dict:
+    async def _device_request(self, url_key: str, params: dict, url_params=None, retry_on_401=True) -> dict:
         """Make a generic request to the SHome API."""
+        header = self._header_maker.device_header(self._cookie, self._login)
+
         if url_params is None:
             url_params = {}
-        _LOGGER.debug("[%s] request headers: %s, params: %s, url_params: %s", url_key, headers, params, url_params)
+        _LOGGER.debug("[%s] request headers: %s, params: %s, url_params: %s", url_key, header, params, url_params)
 
         try:
             url, method = self._get_url(url_key, **url_params)
             _LOGGER.debug("[%s] fetched URL: [%s] %s", url_key, method, url)
 
-            async with self._session.request(method=method, url=url, headers=headers, params=params) as response:
+            async with self._session.request(method=method, url=url, headers=header, params=params) as response:
                 response.raise_for_status()
                 data = await response.json()
                 _LOGGER.debug("[%s] request success.\n\tstatus: %s\n\theader: %s\n\tbody: %s", url_key, response.status, response.headers, data)
@@ -241,7 +243,7 @@ class SHomeClient:
             if e.status == 401 and retry_on_401:
                 _LOGGER.warning("[%s] request 401 - attempting to re-login", url_key)
                 await self.login()
-                return await self._device_request(url_key, headers, params, url_params, retry_on_401=False)
+                return await self._device_request(url_key, params, url_params, retry_on_401=False)
             else:
                 _LOGGER.error("[%s] request sent successful, but throw error.\n\tstatus: %s\n\theader: %s\n\tbody: %s", url_key, e.status, e.headers, e.message)
                 _LOGGER.debug("[%s] detailed stack-trace", url_key, exc_info=True)
@@ -255,7 +257,6 @@ class SHomeClient:
         """Fetch light information from SHome API."""
         data = await self._device_request(
             url_key="get_light_info",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.basic_params(device_id),
             url_params={"device_id": device_id}
         )
@@ -264,7 +265,6 @@ class SHomeClient:
     async def toggle_all_light(self, device_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_all_light",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.on_off_params(device_id, "0", state),
             url_params={"device_id": device_id}
         )
@@ -272,7 +272,6 @@ class SHomeClient:
     async def toggle_single_light(self, device_id: str, light_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_single_light",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.on_off_params(device_id, light_id, state),
             url_params={"device_id": device_id, "light_id": light_id}
         )
@@ -280,7 +279,6 @@ class SHomeClient:
     async def toggle_room_light(self, device_id: str, room_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_room_light",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.on_off_params(device_id, room_id, state),
             url_params={"device_id": device_id, "room_id": room_id}
         )
@@ -288,7 +286,6 @@ class SHomeClient:
     async def get_sensor_info(self, device_id: str) -> list[SHomeSensorInfo]:
         data = await self._device_request(
             url_key="sensor_info",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.basic_params(device_id),
             url_params={"device_id": device_id}
         )
@@ -297,7 +294,6 @@ class SHomeClient:
     async def get_ventilation_info(self, device_id: str) -> list[SHomeVentilationInfo]:
         data = await self._device_request(
             url_key="ventilation_info",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.basic_params(device_id),
             url_params={"device_id": device_id}
         )
@@ -308,7 +304,6 @@ class SHomeClient:
     async def toggle_ventilation(self, device_id: str, sub_device_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_ventilation",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.on_off_params(device_id, sub_device_id, state),
             url_params={"device_id": device_id, "sub_device_id": sub_device_id}
         )
@@ -316,7 +311,6 @@ class SHomeClient:
     async def set_ventilation_speed(self, device_id: str, sub_device_id: str, speed: VentilationSpeed):
         await self._device_request(
             url_key="set_ventilation_speed",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.mode_params(device_id, sub_device_id, speed),
             url_params={"device_id": device_id, "sub_device_id": sub_device_id}
         )
@@ -324,7 +318,6 @@ class SHomeClient:
     async def get_aircon_info(self, device_id: str) -> list[SHomeAirconInfo]:
         data = await self._device_request(
             url_key="aircon_info",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.basic_params(device_id),
             url_params={"device_id": device_id}
         )
@@ -333,7 +326,6 @@ class SHomeClient:
     async def toggle_aircon(self, device_id: str, sub_device_id: str, state: OnOffStatus):
         await self._device_request(
             url_key="toggle_aircon",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.on_off_params(device_id, sub_device_id, state),
             url_params={"device_id": device_id, "sub_device_id": sub_device_id}
         )
@@ -341,7 +333,6 @@ class SHomeClient:
     async def set_aircon_temp(self, device_id: str, sub_device_id: str, temperature: int):
         await self._device_request(
             url_key="set_aircon_temp",
-            headers=self._header_maker.device_header(self._cookie, self._login),
             params=self._param_maker.temperature_params(device_id, sub_device_id, temperature),
             url_params={"device_id": device_id, "sub_device_id": sub_device_id}
         )
