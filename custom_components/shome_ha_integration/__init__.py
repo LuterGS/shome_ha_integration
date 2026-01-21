@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinators.aircon_coordinator import AirconCoordinator
+from .coordinators.heater_coordinator import HeaterCoordinator
 from .coordinators.light_coordinator import LightsCoordinator
 from .coordinators.sensor_coordinator import SensorCoordinator
 from .coordinators.ventilation_coordinator import VentilationCoordinator
@@ -60,6 +61,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.debug("Found %d aircon devices from total %d devices", len(aircon_devices), len(home_info.devices))
     aircon_coordinator: AirconCoordinator = AirconCoordinator(hass, credential, aircon_devices)
     await aircon_coordinator.async_config_entry_first_refresh()
+
+    # create heater coordinator
+    heater_devices: list[SHomeDevice] = device_by_type.get(Platform.CLIMATE, {}).get("heater", [])
+    _LOGGER.debug("Found %d heater devices from total %d devices", len(heater_devices), len(home_info.devices))
+    heater_coordinator: HeaterCoordinator = HeaterCoordinator(hass, credential, heater_devices)
+    await heater_coordinator.async_config_entry_first_refresh()
+
 
     # save coordinators for future use
     hass.data.setdefault(DOMAIN, {})

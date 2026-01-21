@@ -10,6 +10,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .dto.aircon import SHomeAirconInfo
 from .dto.cookie import Cookie
 from .dto.device import SHomeDevice
+from .dto.heater import SHomeHeaterInfo
 from .dto.home_info import SHomeInfo
 from .dto.light import SHomeLightInfo
 from .dto.status import OnOffStatus
@@ -96,6 +97,17 @@ class SHomeClient:
             device_id = kwargs.get("device_id")
             sub_device_id = kwargs.get("sub_device_id")
             return f"https://shome-api.samsung-ihp.com/v18/settings/aircon/{device_id}/{sub_device_id}/temperature", "PUT"
+        elif url_type == "heater_info":
+            device_id = kwargs.get("device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/heater/{device_id}", "GET"
+        elif url_type == "toggle_heater":
+            device_id = kwargs.get("device_id")
+            sub_device_id = kwargs.get("sub_device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/heater/{device_id}/{sub_device_id}/on-off", "PUT"
+        elif url_type == "set_heater_temp":
+            device_id = kwargs.get("device_id")
+            sub_device_id = kwargs.get("sub_device_id")
+            return f"https://shome-api.samsung-ihp.com/v18/settings/heater/{device_id}/{sub_device_id}/temperature", "PUT"
         else:
             raise ValueError(f"Unknown URL type: {url_type}")
 
@@ -333,6 +345,28 @@ class SHomeClient:
     async def set_aircon_temp(self, device_id: str, sub_device_id: str, temperature: int):
         await self._device_request(
             url_key="set_aircon_temp",
+            params=self._param_maker.temperature_params(device_id, sub_device_id, temperature),
+            url_params={"device_id": device_id, "sub_device_id": sub_device_id}
+        )
+
+    async def get_heater_info(self, device_id: str) -> list[SHomeHeaterInfo]:
+        data = await self._device_request(
+            url_key="heater_info",
+            params=self._param_maker.basic_params(device_id),
+            url_params={"device_id": device_id}
+        )
+        return SHomeHeaterInfo.from_dict(data)
+
+    async def toggle_heater(self, device_id: str, sub_device_id: str, state: OnOffStatus):
+        await self._device_request(
+            url_key="toggle_heater",
+            params=self._param_maker.on_off_params(device_id, sub_device_id, state),
+            url_params={"device_id": device_id, "sub_device_id": sub_device_id}
+        )
+
+    async def set_heater_temp(self, device_id: str, sub_device_id: str, temperature: int):
+        await self._device_request(
+            url_key="set_heater_temp",
             params=self._param_maker.temperature_params(device_id, sub_device_id, temperature),
             url_params={"device_id": device_id, "sub_device_id": sub_device_id}
         )
