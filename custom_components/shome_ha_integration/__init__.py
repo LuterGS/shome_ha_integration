@@ -76,6 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "sensor_coordinator": sensor_coordinator,
         "ventilation_coordinator": ventilation_coordinator,
         "aircon_coordinator": aircon_coordinator,
+        "heater_coordinator": heater_coordinator,
     }
 
     # launch devices

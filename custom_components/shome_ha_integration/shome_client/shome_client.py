@@ -166,8 +166,10 @@ class SHomeClient:
                     )
                     _LOGGER.debug("[login] got session cookies - JSESSIONID: %s, WMONID: %s", self._cookie.JSESSIONID,
                                   self._cookie.WMONID)
+                elif self._cookie is None:
+                    raise RuntimeError("[login] Cookie not found in response and no existing cookie available")
                 else:
-                    _LOGGER.warning("[login] Cookie not found, will use existing cookie value")
+                    _LOGGER.warning("[login] Cookie not found in response, using existing cookie value")
 
             await asyncio.sleep(0.5)  # Sleep to ensure cookies are set before next request
 

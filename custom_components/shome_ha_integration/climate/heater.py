@@ -38,7 +38,7 @@ class Heater(CoordinatorEntity, ClimateEntity):
     def hvac_mode(self) -> HVACMode:
         is_on = (self.coordinator.data or {}).get(self._device_key, {}).get("sub_devices", {}).get(self._id, {}).get("on", False)
         if is_on:
-            return HVACMode.COOL
+            return HVACMode.HEAT
         else:
             return HVACMode.OFF
 
@@ -57,7 +57,7 @@ class Heater(CoordinatorEntity, ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         if hvac_mode == HVACMode.OFF:
             await self.async_turn_off()
-        elif hvac_mode == HVACMode.COOL:
+        elif hvac_mode == HVACMode.HEAT:
             await self.async_turn_on()
         # 다른 모드는 미지원
 
